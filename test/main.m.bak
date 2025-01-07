@@ -1,0 +1,131 @@
+function flappy_bird_game
+    % Game Parameters
+    game_height = 128;    % Game area height (pixels)
+    game_width = 128;     % Game area width (pixels)
+    bird_size = 10;       % Bird size (10x10 pixels)
+    gravity = 2;          % Gravity effect
+    lift = -15;           % Lift effect when the bird jumps
+    pipe_width = 20;      % Pipe width
+    gap_height = 40;      % Gap height between pipes
+    pipe_speed = 5;       % Horizontal speed of the pipes (pixels/frame)
+    
+    % Initial States
+    bird_y = game_height / 2;    % Bird's initial vertical position
+    bird_velocity = 0;           % Bird's initial velocity
+    pipe_x = game_width;         % Pipe's initial horizontal position
+    score = 0;                   % Initial score
+
+    % GUI Creation
+    fig = figure('Name', 'Flappy Bird Game', ...
+        'NumberTitle', 'off', 'MenuBar', 'none', ...
+        'Resize', 'off', 'Position', [100, 100, 400, 200]);
+
+    % Create a Listbox to display the score
+    listbox_handle = uicontrol('Style', 'listbox', 'Position', [10, 10, 100, 180], ...
+        'String', {'Score: 0'}, 'Tag', 'listbox');
+
+    % Create a Button to jump and start/restart the game
+    jump_button = uicontrol('Style', 'pushbutton', 'String', 'Start', ...
+        'Position', [120, 150, 80, 30], 'Callback', @jump);
+
+    % Create an Axes for the game area
+    game_axes = axes('Units', 'pixels', 'Position', [120, 10, game_width*4, game_height*4]);
+    axis off;
+    hold on;
+
+    % Initialize the Game State
+    isRunning = false;
+
+    % Function to Start or Jump
+    function jump(~, ~)
+        if ~isRunning
+            % Start/Restart the Game
+            isRunning = true;
+            score = 0;
+            bird_y = game_height / 2;
+            bird_velocity = 0;
+            pipe_x = game_width;
+            set(jump_button, 'String', 'Jump');
+            updateScore();
+            gameLoop();
+        else
+            % Apply Lift to the Bird
+            bird_velocity = lift;
+        end
+    end
+
+    % Game Loop
+    function gameLoop()
+        while isRunning
+            % Update Bird Position
+            bird_velocity = bird_velocity + gravity;
+            bird_y = bird_y + bird_velocity;
+
+            % Check for Collision with Ground or Ceiling
+            if bird_y <= 0 || bird_y + bird_size >= game_height
+                gameOver();
+                return;
+            end
+
+            % Move the Pipe to the Left
+            pipe_x = pipe_x - pipe_speed;
+
+            % Reset Pipe Position and Increase Score when it goes off-screen
+            if pipe_x < -pipe_width
+                pipe_x = game_width;
+                score = score + 1;
+                updateScore();
+            end
+
+            % Random Pipe Gap Position
+            pipe_y = randi([20, game_height - gap_height - 20]);
+
+            % Check for Collision with Pipe
+            if (pipe_x <= game_width / 2 && pipe_x + pipe_width >= game_width / 2) && ...
+               (bird_y <= pipe_y || bird_y + bird_size >= pipe_y + gap_height)
+                gameOver();
+                return;
+            end
+
+            % Draw the Game Scene
+            drawScene(pipe_y);
+
+            % Pause for Animation Effect
+            pause(0.05);
+        end
+    end
+
+    % Function to Draw the Game Scene
+    function drawScene(pipe_y)
+        % Create a Blank Background
+        image_data = uint8(zeros(game_height, game_width, 3));
+
+        % Draw the Bird (Red Square)
+        image_data(round(bird_y):round(bird_y) + bird_size - 1, ...
+            game_width / 2:game_width / 2 + bird_size - 1, 1) = 255;
+
+        % Draw the Pipes (Green Rectangles)
+        image_data(1:pipe_y - 1, pipe_x:pipe_x + pipe_width - 1, 2) = 255; % Upper Pipe
+        image_data(pipe_y + gap_height:end, pipe_x:pipe_x + pipe_width - 1, 2) = 255; % Lower Pipe
+
+        % Display the Image
+        imshow(image_data, 'Parent', game_axes);
+    end
+
+    % Function to Update the Score
+    function updateScore()
+        listbox_strings = get(listbox_handle, 'String');
+        listbox_strings{1} = ['Score: ' num2str(score)];
+        set(listbox_handle, 'String', listbox_strings);
+    end
+
+    % Function for Game Over
+    function gameOver()
+        % Stop the Game and Display "Game Over"
+        isRunning = false;
+        set(jump_button, 'String', 'Restart');
+        listbox_strings = get(listbox_handle, 'String');
+        listbox_strings = [listbox_strings; {'Game Over'}];
+        set(listbox_handle, 'String', listbox_strings);
+    end
+end

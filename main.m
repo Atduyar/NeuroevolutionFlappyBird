@@ -53,10 +53,15 @@ function main()
 	arePlayerPlaying_checkbox = uicontrol('Style', 'checkbox', 'String', 'Player Playing', 'Value', arePlayerPlaying, ...
 		'Position', [game_width*4 + 20, 420, 100, 20], 'Callback', @togglePlayerPlaying);
 
+	% auto replay
+	auto_replay = false;
+	auto_replay_checkbox = uicontrol('Style', 'checkbox', 'String', 'Auto Replay', 'Value', auto_replay, ...
+		'Position', [game_width*4 + 20, 390, 100, 20], 'Callback', @toggleAutoReplay);
+
 	% Birds List
 	birds_list_label = uicontrol('Style', 'text', 'String', 'Birds List', ...
-		'Position', [game_width*4 + 20, 390, 100, 20]);
-	birds_list = uicontrol('Style', 'listbox', 'Position', [game_width*4 + 20, 190, 200, 200], 'String', {});
+		'Position', [game_width*4 + 20, 360, 100, 20]);
+	birds_list = uicontrol('Style', 'listbox', 'Position', [game_width*4 + 20, 160, 200, 200], 'String', {});
 
     % Create an Axes for the game area
     game_screen = axes('Units', 'pixels', 'Position', [10, 40, game_width*4, game_height*4]);
@@ -85,6 +90,14 @@ function main()
 		end
 		arePlayerPlaying = ~arePlayerPlaying;
 	end
+	function toggleAutoReplay(~, ~)
+		if arePlayerPlaying == false && ai_birds_count == 0
+			set(auto_replay_checkbox, 'Value', auto_replay);
+			msgbox('Can not change while no AI birds to play', 'Error', 'error');
+			return;
+		end
+		auto_replay = ~auto_replay;
+	end
 
     function keyPressHandler(event)
         switch event.Key
@@ -102,6 +115,19 @@ function main()
     function jump(~, ~)
 		% restart
 		if gameOver
+			% clear pipes
+			for i = 1:length(pipes)
+				pipes(i) = pipes(i).delete();
+			end
+
+			% clear birds
+			for i = 1:length(birds)
+				if birds(i).isDead == false
+					birds(i) = birds(i).delete();
+				end
+			end
+
+			% new Birds
 			if arePlayerPlaying
 				birds = [Bird(false, game_height/2)];
 			else
@@ -121,25 +147,21 @@ function main()
 			if ai_birds_count > 0 && arePlayerPlaying == false
 				ai_birds_count += 1;
 			end
+
+			% new Pipes
 			pipes = [Pipe(game_width/1.2, randi([16, 86]), game_height)];
 			pipes(end+1) = Pipe(pipes(end).x + game_width*0.9, randi([16, 86]), game_height);
 			pipes(end+1) = Pipe(pipes(end).x + game_width*0.9, randi([16, 86]), game_height);
+
+
 			gameOver = false;
+			frame = 0;
 			set(jump_button, 'String', 'Jump');
-			
-			% birdListString = {};
-			% for i = 1:length(birds)
-			% 	if birds(i).isAI
-			% 		birdListString{end+1} = '🤖 AI';
-			% 	else
-			% 		birdListString{end+1} = '*👤 Player';
-			% 	end
-			% end
-			% set(birds_list, 'String', birdListString); 
 
-
+			% first draw
 			cla(game_screen);
 			rectangle('Position', [0, 0, game_width, game_height], 'FaceColor', 'black');
+
 			for i = 1:length(birds)
 				birds(i) = birds(i).firstDraw();
 			end
@@ -150,9 +172,9 @@ function main()
 				% fix focus to game screen
 				set(fig, 'CurrentAxes', game_screen);
 			end
+
 			% Don't show overflow
 			axis([0, game_width, 0, game_height]);
-			frame = 0;
 			return;
 		end
 
@@ -162,24 +184,38 @@ function main()
 			birds(theBird) = birds(theBird).jump();
 		end
 	end
+	function printlog(s)
+		disp(s);
+	end
 
     % Game Loop
     function gameLoop()
         while isRunning
 			if gameOver
-				pause(0.3);
+				printlog('Game Over');
+				if arePlayerPlaying
+					pause(0.5);
+				end
+				if auto_replay
+					jump();
+				end
 				continue;
 			end
 			
 			% Update
+			printlog('Update');
 			updateScene();
+			printlog('Update UI');
 			updateUI();
+			disp('Frame: ');
+			disp(frame);
 			frame += 1;
 
             % Draw the Game Scene
 			if skip_draw
 				continue;
 			end
+			printlog('Draw Scene');
             drawScene();
 			drawnow;
 
@@ -205,12 +241,6 @@ function main()
 		
 		% Draw the Pipes
 		for i = 1:length(pipes)
-			if pipes(i).x + pipes(i).width < 0
-				delete(pipes(i).handler_up);
-				delete(pipes(i).handler_down);
-				pipes(i) = Pipe(pipes(i).x + game_width*0.9*3, randi([16, 86]), game_height);
-				pipes(i) = pipes(i).firstDraw();
-			end
 			pipes(i).draw();
 		end
     end
@@ -227,24 +257,36 @@ function main()
 
 	function updateScene()
 		% Update birds position
+		printlog('Update Birds');
 		for i = 1:length(birds)
 			birds(i) = birds(i).update();
 		end
 
 		% Update pipes
+		printlog('Update Pipes');
 		for i = 1:length(pipes)
 			pipes(i) = pipes(i).update();
 		end
 
+		% Check pipes collision
+		for i = 1:length(pipes)
+			if pipes(i).x + pipes(i).width < 0
+				pipes(i) = pipes(i).changePosition(pipes(i).x + game_width*0.9*3, randi([16, 86]));
+			end
+		end
+
 		% Find the next pipe
+		printlog('Find Next Pipe');
 		nextPipe = findNextPipe(pipes);
 
 		% Check collision
+		printlog('Check Collision');
 		for i = 1:length(birds)
 			birds(i) = birds(i).checkCollision(nextPipe, game_height);
 		end
 
 		% if everyone is dead, game over
+		printlog('Check Game Over');
 		if all([birds.isDead])
 			gameOver = true;
 			updateUI();

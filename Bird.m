@@ -30,6 +30,14 @@ classdef Bird
 			obj.score = 0;
 			obj.handler = 0;
 		end
+
+		function obj = delete(obj)
+			if obj.handler == 0
+				return;
+			end
+			delete(obj.handler);
+			obj.handler = 0;
+		end
 		
 		function obj = jump(obj)
 			obj.velocity = obj.lift;
@@ -70,6 +78,8 @@ classdef Bird
 			if obj.y <= 0 || obj.y + obj.size >= game_height
 				obj.isDead = true;
 				delete(obj.handler);
+				obj.handler = 0;
+				return;
 			end
 			birdRect = [obj.x, obj.y, obj.size, obj.size];
 
@@ -90,6 +100,7 @@ classdef Bird
 					obj.isDead = true;
 					obj.score += 1;
 					delete(obj.handler);
+					obj.handler = 0;
 				end
 			end
 

@@ -19,6 +19,19 @@ classdef Pipe
 			obj.handler_up = 0;
 			obj.handler_down = 0;
 		end
+		function obj = delete(obj)
+			if obj.handler_up == 0
+				return;
+			end
+			delete(obj.handler_up);
+			delete(obj.handler_down);
+			obj.handler_up = 0;
+			obj.handler_down = 0;
+		end
+		function obj = changePosition(obj, x, y)
+			obj.x = x;
+			obj.y = y;
+		end
 		function obj = firstDraw(obj)
 			rects = obj.getRects();
 			obj.handler_up = rectangle('Position', rects(1,:), 'FaceColor', 'green', 'EdgeColor', 'green');

@@ -30,38 +30,40 @@ function main()
     %     'String', {'Score: 0'}, 'Tag', 'listbox');
 
 	% range for number of birds
-	ai_birds_count = 0;
+	ai_birds_count = 15;
 	ai_birds_label = uicontrol('Style', 'text', 'String', 'Ai Bird Count: 0' , ...
 		'Position', [game_width*4 + 20, 550, 150, 20]);
 	ai_birds_slider = uicontrol('Style', 'slider', 'Min', 0, 'Max', 150, 'Value', ai_birds_count, ...
 		'Position', [game_width*4 + 20, 530, 200, 20], 'Callback', @setAiBirdsCount);
 
-	% range for max bird draw
-	max_bird_draw = 151;
-	max_bird_draw_label = uicontrol('Style', 'text', 'String', 'Max Bird Draw', ...
-		'Position', [game_width*4 + 20, 505, 100, 20]);
-	max_bird_draw_slider = uicontrol('Style', 'slider', 'Min', 1, 'Max', 151, 'Value', max_bird_draw, ...
-		'Position', [game_width*4 + 20, 480, 200, 20], 'Callback', @setMaxBirdDraw);
+	% player delay
+	player_delay = 0.024;
+	player_delay_label = uicontrol('Style', 'text', 'String', 'Playing Delay: 0.024' , ...
+		'Position', [game_width*4 + 20, 505, 200, 20]);
+	player_delay_slider = uicontrol('Style', 'slider', 'Min', 0, 'Max', 100, 'Value', player_delay*1000, ...
+		'Position', [game_width*4 + 20, 480, 200, 20], 'Callback', @setPlayerDelay);
 
 	% toggle for skip drawing
 	skip_draw = false;
 	uicontrol('Style', 'checkbox', 'String', 'Skip Draw', ...
-		'Position', [game_width*4 + 20, 450, 100, 20], 'Callback', @toggleSkipDraw);
+		'Position', [game_width*4 + 20, 450, 200, 20], 'Callback', @toggleSkipDraw);
 
 	% Player toggle
 	arePlayerPlaying = true;
 	arePlayerPlaying_checkbox = uicontrol('Style', 'checkbox', 'String', 'Player Playing', 'Value', arePlayerPlaying, ...
-		'Position', [game_width*4 + 20, 420, 100, 20], 'Callback', @togglePlayerPlaying);
+		'Position', [game_width*4 + 20, 420, 200, 20], 'Callback', @togglePlayerPlaying);
 
 	% auto replay
 	auto_replay = false;
 	auto_replay_checkbox = uicontrol('Style', 'checkbox', 'String', 'Auto Replay', 'Value', auto_replay, ...
-		'Position', [game_width*4 + 20, 390, 100, 20], 'Callback', @toggleAutoReplay);
+		'Position', [game_width*4 + 20, 390, 200, 20], 'Callback', @toggleAutoReplay);
 
 	% Birds List
 	birds_list_label = uicontrol('Style', 'text', 'String', 'Birds List', ...
-		'Position', [game_width*4 + 20, 360, 100, 20]);
+		'Position', [game_width*4 + 20, 360, 200, 20]);
 	birds_list = uicontrol('Style', 'listbox', 'Position', [game_width*4 + 20, 160, 200, 200], 'String', {});
+	% if double click on list, show the neural network window
+	set(birds_list, 'Callback', @showBirdBrain);
 
     % Create an Axes for the game area
     game_screen = axes('Units', 'pixels', 'Position', [10, 40, game_width*4, game_height*4]);
@@ -72,12 +74,30 @@ function main()
     isRunning = true;
 	gameOver = true;
 
+	function showBirdBrain(~, ~)
+		% get the selected bird
+		selectedBird = get(birds_list, 'Value');
+		if isempty(selectedBird)
+			return;
+		end
+		selectedBird = selectedBird(1);
+		if selectedBird > length(birds)
+			return;
+		end
+		if birds(selectedBird).isAI == false
+			return;
+		end
+		% show the neural network
+		birds(selectedBird).brain.popUpWindow();
+	end
+
 	function setAiBirdsCount(~, ~)
 		ai_birds_count = round(get(ai_birds_slider, 'Value'));
 		set(ai_birds_label, 'String', ['Ai Bird Count: ', num2str(ai_birds_count)]);
 	end
-	function setMaxBirdDraw(~, ~)
-		max_bird_draw = round(get(max_bird_draw_slider, 'Value'));
+	function setPlayerDelay(~, ~)
+		player_delay = get(player_delay_slider, 'Value')/1000;
+		set(player_delay_label, 'String', ['Playing Delay: ', num2str(player_delay)]);
 	end
 	function toggleSkipDraw(~, ~)
 		skip_draw = ~skip_draw;
@@ -193,8 +213,8 @@ function main()
         while isRunning
 			if gameOver
 				printlog('Game Over');
-				if arePlayerPlaying
-					pause(0.5);
+				if ~auto_replay || player_delay ~= 0
+					pause(0.1);
 				end
 				if auto_replay
 					jump();
@@ -221,8 +241,7 @@ function main()
 
             % Pause for Animation Effect
 			if arePlayerPlaying
-            	pause(0.024);
-            	% pause(0.324);
+            	pause(player_delay);
 			end
         end
     end

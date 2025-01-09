@@ -17,5 +17,8 @@ classdef BirdBrain
 			outputs = obj.nn.feedforward(inputs);
 			desision = outputs(1) > outputs(2);
 		end
+		function obj = popUpWindow(obj)
+			obj.nn.popUpWindow();
+		end
 	end
 end

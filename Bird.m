@@ -103,19 +103,13 @@ classdef Bird
 					obj.handler = 0;
 				end
 			end
+		end
 
-			% for i = 1:length(pipes)
-			% 	rects = pipes(i).getRects();
-			% 	% rectangle circle collision
-			% 	for j = 1:size(rects, 1)
-			% 		rect = rects(j, :);
-			% 		if birdRect(1) < rect(1) + rect(3) && birdRect(1) + birdRect(3) > rect(1) && ...
-			% 			birdRect(2) < rect(2) + rect(4) && birdRect(2) + birdRect(4) > rect(2)
-			% 			obj.isDead = true;
-			% 			delete(obj.handler);
-			% 		end
-			% 	end
-			% end
+		function obj = popUpWindow(obj)
+			if obj.isAI == false
+				return;
+			end
+			obj.brain.nn.popUpWindow();
 		end
 	end
 end

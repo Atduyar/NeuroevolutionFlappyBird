@@ -4,6 +4,9 @@ classdef NeuralNetwork
 		weights
 		biases
 	end
+	properties (Static)
+		OpenedFigure
+	end
 	properties (Constant)
 	end
 	methods
@@ -24,13 +27,20 @@ classdef NeuralNetwork
 			% disp(obj.weights{1});
 			% disp(size(obj.weights{1}));
 			% disp(obj);
-			% disp(obj.weights{1}(1,2));
+			% disp(obj.weights{1}(1,2))
 		end
 		
 		% NeuralNetwork Visualizer
 		function obj = popUpWindow(obj)
+			% close the previous window
+			persistent OpenedFigure;
+			if ~isempty(OpenedFigure)
+				close(OpenedFigure);
+				OpenedFigure = [];
+			end
+
 			% Create a figure and an axes
-			figure('Name', 'Neural Network Visualizer', 'NumberTitle', 'off', 'MenuBar', 'none', 'Resize', 'off', ...
+			OpenedFigure = figure('Name', 'Neural Network Visualizer', 'NumberTitle', 'off', 'MenuBar', 'none', 'Resize', 'off', ...
 				'Position', [1000, 100, 600, 600]);
 			hold on;
 			axis off;

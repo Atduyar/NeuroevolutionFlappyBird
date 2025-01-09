@@ -76,19 +76,25 @@ function main()
 
 	function showBirdBrain(~, ~)
 		% get the selected bird
+		birds_list_arr = get(birds_list, 'String');
 		selectedBird = get(birds_list, 'Value');
 		if isempty(selectedBird)
 			return;
 		end
 		selectedBird = selectedBird(1);
-		if selectedBird > length(birds)
+		% display(selectedBird);
+		% display(birds_list_arr(selectedBird,1));
+		birdScoreText = birds_list_arr(selectedBird,1);
+		birdId = str2num(birdScoreText{1}(strfind(birdScoreText{1}, '#')+1:end));
+		% display(birdId);
+		if birdId > length(birds)
 			return;
 		end
-		if birds(selectedBird).isAI == false
+		if birds(birdId).isAI == false
 			return;
 		end
 		% show the neural network
-		birds(selectedBird).brain.popUpWindow();
+		birds(birdId).popUpWindow();
 	end
 
 	function setAiBirdsCount(~, ~)
@@ -319,7 +325,7 @@ function main()
 			birdListString = {}; % with score
 			for i = 1:length(birds)
 				if birds(i).isAI
-					birdListString{end+1} = [' 🤖 AI: ', num2str(birds(i).score)];
+					birdListString{end+1} = [' 🤖 AI: ', num2str(birds(i).score), '    #', num2str(i)];
 				else
 					birdListString{end+1} = ['*👤 Player: ', num2str(birds(i).score)];
 				end

@@ -7,13 +7,16 @@ classdef Bird
 		velocity
 		isDead
 		score
+		lifetime
 		justDidScore
 	end
 	properties (Constant)
 		x = 10;
 		size = 10;
-		gravity = -.8;
-		lift = 6;
+		% gravity = -.8;
+		gravity = -.6;
+		% lift = 6;
+		lift = 4;
 	end
 
 	methods
@@ -28,6 +31,7 @@ classdef Bird
 			obj.velocity = 0;
 			obj.isDead = false;
 			obj.score = 0;
+			obj.lifetime = 0;
 			obj.handler = 0;
 		end
 
@@ -40,15 +44,21 @@ classdef Bird
 		end
 		
 		function obj = jump(obj)
-			obj.velocity = obj.lift;
+			if obj.velocity < 0
+				obj.velocity = 0;
+			end
+			if obj.velocity > 0
+				obj.velocity = obj.velocity / 2;
+			end
+			obj.velocity += obj.lift;
 		end
 
-		function obj = update(obj)
+		function obj = update(obj, nextPipe, game_width)
 			if obj.isDead
 				return;
 			end
 			if obj.isAI == true
-				desision = obj.brain.think(obj);
+				desision = obj.brain.think(obj, nextPipe, game_width);
 				if desision
 					obj = obj.jump();
 				end
@@ -71,12 +81,13 @@ classdef Bird
 			set(obj.handler, 'Position', [obj.x, obj.y, obj.size, obj.size]);
 		end
 		
-		function obj = checkCollision(obj, nextPipe, game_height)
+		function obj = checkCollision(obj, nextPipe, game_height, frame)
 			if obj.isDead
 				return;
 			end
 			if obj.y <= 0 || obj.y + obj.size >= game_height
 				obj.isDead = true;
+				obj.lifetime += frame;
 				delete(obj.handler);
 				obj.handler = 0;
 				return;
@@ -98,6 +109,7 @@ classdef Bird
 				if birdRect(1) < rect(1) + rect(3) && birdRect(1) + birdRect(3) > rect(1) && ...
 					birdRect(2) < rect(2) + rect(4) && birdRect(2) + birdRect(4) > rect(2)
 					obj.isDead = true;
+					obj.lifetime += frame;
 					obj.score += 1;
 					delete(obj.handler);
 					obj.handler = 0;
@@ -105,11 +117,11 @@ classdef Bird
 			end
 		end
 
-		function obj = popUpWindow(obj)
+		function obj = popUpWindow(obj, mainFigure)
 			if obj.isAI == false
 				return;
 			end
-			obj.brain.nn.popUpWindow();
+			obj.brain.nn.popUpWindow(mainFigure);
 		end
 	end
 end

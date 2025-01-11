@@ -7,7 +7,8 @@ classdef Pipe
 		handler_down
 	end
 	properties (Constant)
-		speed = 5;
+		% speed = 5;
+		speed = 3;
 		width = 20;
 		gap_height = 40;
 	end

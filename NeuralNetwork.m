@@ -11,42 +11,54 @@ classdef NeuralNetwork
 	end
 	methods
 		function obj = NeuralNetwork(layers)
-			obj.layers = layers; % e.g. [5, 9, 2]
-			% hidden layers + output layer weights
-			obj.weights = cell(1, length(layers)-1); 
-			% hidden layers + output layer biases
-			obj.biases = cell(1, length(layers)-1);
+			if ischar(layers)
+				jsonString = jsondecode(layers);
 
-			for i = 2:length(layers)
-				% create random weights between -1 and 1
-				obj.weights{i-1} = 2*rand(layers(i-1), layers(i)) - 1;
-				% create random biases between -1 and 1
-				obj.biases{i-1} = 2*rand(layers(i), 1) - 1;
+				obj.layers = jsonString(1).layers;
+				obj.weights = cell(1, length(jsonString));
+				obj.biases = cell(1, length(jsonString));
+
+				for i = 1:length(jsonString)
+					obj.weights{i} = jsonString(i).weights;
+					obj.biases{i} = jsonString(i).biases;
+				end
+			else
+				obj.layers = layers; % e.g. [5, 9, 2]
+				% hidden layers + output layer weights
+				obj.weights = cell(1, length(layers)-1); 
+				% hidden layers + output layer biases
+				obj.biases = cell(1, length(layers)-1);
+
+				for i = 2:length(layers)
+					% create random weights between -1 and 1
+					obj.weights{i-1} = 2*rand(layers(i-1), layers(i)) - 1;
+					% create random biases between -1 and 1
+					obj.biases{i-1} = 2*rand(layers(i), 1) - 1;
+				end
 			end
-			% disp(obj);
-			% disp(obj.weights{1});
-			% disp(size(obj.weights{1}));
-			% disp(obj);
-			% disp(obj.weights{1}(1,2))
 		end
 		
 		% NeuralNetwork Visualizer
-		function obj = popUpWindow(obj)
+		function obj = popUpWindow(obj, mainFigure)
 			% close the previous window
 			persistent OpenedFigure;
 			if ~isempty(OpenedFigure)
-				close(OpenedFigure);
+				try
+					close(OpenedFigure);
+				catch
+				end
 				OpenedFigure = [];
 			end
 
 			% Create a figure and an axes
+			fig_width = 150*(length(obj.layers)-1) + 50;
+			fig_height = 50 * max(obj.layers) + 50;
 			OpenedFigure = figure('Name', 'Neural Network Visualizer', 'NumberTitle', 'off', 'MenuBar', 'none', 'Resize', 'off', ...
-				'Position', [1000, 100, 600, 600]);
+				'Position', [1000, 100, fig_width, fig_height]);
 			hold on;
 			axis off;
 
 			% draw the nodes
-			disp(obj.layers);
 			for i = 1:length(obj.layers)
 				for j = 1:obj.layers(i)
 					% draw the node centerd
@@ -67,7 +79,12 @@ classdef NeuralNetwork
 					for k = 1:obj.layers(i+1)
 						% draw the line between nodes
 						% line([x1, x2], [y1, y2])
-						hexColor = dec2hex(round(abs(obj.weights{i}(j, k))*255));
+
+						nodeValue= round(abs(obj.weights{i}(j, k))*255);
+						if nodeValue > 255
+							nodeValue = 255;
+						end
+						hexColor = dec2hex(nodeValue);
 						if length(hexColor) == 1
 							hexColor = ['0', hexColor];
 						end
@@ -81,7 +98,22 @@ classdef NeuralNetwork
 			end
 			
 			% 600x600
-			axis([0 600 0 600]);
+			axis([0 fig_width 0 fig_height]);
+
+			% close button
+			uicontrol('Style', 'pushbutton', 'String', 'Close', 'Position', [fig_width-50, fig_height-30, 50, 30], ...
+				'Callback', @(src, event) close(OpenedFigure));
+
+			% print the NN object as json string
+			nnJson = struct('layers', obj.layers, 'weights', obj.weights, 'biases', obj.biases);
+			uicontrol('Style', 'pushbutton', 'String', 'Print', 'Position', [fig_width-100, fig_height-30, 50, 30], ...
+				'Callback', @(src, event) disp(jsonencode(nnJson)));
+
+			% copy from hear inputdlg button
+			uicontrol('Style', 'pushbutton', 'String', 'Copy', 'Position', [fig_width-150, fig_height-30, 50, 30], ...
+				'Callback', @(src, event) inputdlg('Copy from this box:', 'Bird NN', [1 50], {jsonencode(nnJson)}));
+			% set the main figure
+			figure(mainFigure);
 		end
 
 		function obj = copy(obj)

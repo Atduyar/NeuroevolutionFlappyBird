@@ -117,7 +117,13 @@ function main()
 		selectedBird = selectedBird(1);
 		% display(selectedBird);
 		% display(birds_list_arr(selectedBird,1));
+	
+
 		birdScoreText = birds_list_arr(selectedBird,1);
+		% string not contains # then it is player
+		if isempty(strfind(birdScoreText{1}, '#'))
+			return;
+		end
 		birdId = str2num(birdScoreText{1}(strfind(birdScoreText{1}, '#')+1:end));
 		% display(birdId);
 		if birdId > length(birds)
